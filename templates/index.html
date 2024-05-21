@@ -9,7 +9,12 @@
             background-color: #121212;
             color: #e0e0e0;
             font-family: Arial, sans-serif;
+            justify-content: center;
+            align-content: center;
+            max-width: 2000px;
+            margin: 0 auto;
         }
+
         #charts-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
@@ -37,6 +42,7 @@
     <center><h1>Stranded HOF Analytics</h1></center>
 
     <div id="charts-container"></div>
+
 
     <script>
         fetch('/data')
