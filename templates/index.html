@@ -9,18 +9,18 @@
             background-color: #121212;
             color: #e0e0e0;
             font-family: Arial, sans-serif;
-            justify-content: center;
-            align-content: center;
             max-width: 2000px;
             margin: 0 auto;
         }
 
         #charts-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(900px, 1fr));
             gap: 20px;
             padding: 20px;
+            justify-content: center;
         }
+
         .chart-wrapper {
             display: flex;
             justify-content: center;
@@ -30,10 +30,14 @@
             padding: 20px;
             border-radius: 8px;
             background-color: #1e1e1e;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
         }
+
         canvas {
-            width: 100% !important;
-            height: auto !important;
+            width: 100%;
+            height: auto;
         }
     </style>
 </head>
@@ -42,7 +46,6 @@
     <center><h1>Stranded HOF Analytics</h1></center>
 
     <div id="charts-container"></div>
-
 
     <script>
         fetch('/data')
