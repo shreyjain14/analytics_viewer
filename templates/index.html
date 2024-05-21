@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Website Page Views</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+        }
+        #charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(45%, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .chart-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border: 1px solid #333;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #1e1e1e;
+        }
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="charts-container"></div>
+
+    <script>
+        fetch('/data')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('charts-container');
+
+                Object.keys(data).forEach(page => {
+                    // Create a div for each chart
+                    const chartDiv = document.createElement('div');
+                    chartDiv.className = 'chart-wrapper';
+                    container.appendChild(chartDiv);
+
+                    // Create a canvas element for each chart
+                    const canvas = document.createElement('canvas');
+                    chartDiv.appendChild(canvas);
+
+                    // Create the chart
+                    const ctx = canvas.getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            datasets: [{
+                                label: page,
+                                data: data[page],
+                                backgroundColor: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 0.2)`,
+                                borderColor: `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`,
+                                borderWidth: 3, // Make the line thicker
+                                pointRadius: 5 // Make the dots larger
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                x: {
+                                    type: 'time',
+                                    time: {
+                                        unit: 'hour',
+                                        tooltipFormat: 'yyyy-MM-dd HH:mm:ss',
+                                        displayFormats: {
+                                            hour: 'yyyy-MM-dd HH:mm:ss'
+                                        },
+                                        ticks: {
+                                            color: '#e0e0e0'
+                                        }
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        color: '#e0e0e0'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: '#e0e0e0'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    </script>
+</body>
+</html>
