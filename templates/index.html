@@ -47,70 +47,88 @@
 
     <div id="charts-container"></div>
 
-    <script>
-        fetch('/data')
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('charts-container');
+ <script>
+        let charts = [];
+        let isInitialRender = true;
+        let pageColors = {};
 
-                Object.keys(data).forEach(page => {
-                    // Create a div for each chart
-                    const chartDiv = document.createElement('div');
-                    chartDiv.className = 'chart-wrapper';
-                    container.appendChild(chartDiv);
+        function generateUniqueColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
 
-                    // Create a canvas element for each chart
-                    const canvas = document.createElement('canvas');
-                    chartDiv.appendChild(canvas);
+        function fetchAndRenderData() {
+            const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
 
-                    // Create the chart
-                    const ctx = canvas.getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            datasets: [{
-                                label: page,
-                                data: data[page],
+            fetch('/data')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('charts-container');
+
+                    // Clear existing charts
+                    charts.forEach(chart => chart.destroy());
+                    charts = [];
+                    container.innerHTML = '';
+
+                    Object.keys(data).forEach(page => {
+                        // Generate new colors for the page if it's the initial render
+                        if (isInitialRender) {
+                            pageColors[page] = {
                                 backgroundColor: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 0.2)`,
-                                borderColor: `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`,
-                                borderWidth: 3, // Make the line thicker
-                                pointRadius: 5 // Make the dots larger
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                x: {
-                                    type: 'time',
-                                    time: {
-                                        unit: 'hour',
-                                        tooltipFormat: 'yyyy-MM-dd HH:mm:ss',
-                                        displayFormats: {
-                                            hour: 'yyyy-MM-dd HH:mm:ss'
-                                        },
-                                        ticks: {
-                                            color: '#e0e0e0'
-                                        }
-                                    }
-                                },
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        color: '#e0e0e0'
-                                    }
-                                }
+                                borderColor: generateUniqueColor()
+                            };
+                        }
+
+                        // Create a div for each chart
+                        const chartDiv = document.createElement('div');
+                        chartDiv.className = 'chart-wrapper';
+                        container.appendChild(chartDiv);
+
+                        // Create a canvas element for each chart
+                        const canvas = document.createElement('canvas');
+                        chartDiv.appendChild(canvas);
+
+                        // Create the chart
+                        const ctx = canvas.getContext('2d');
+                        const chart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                datasets: [{
+                                    label: page,
+                                    data: data[page],
+                                    backgroundColor: pageColors[page].backgroundColor,
+                                    borderColor: pageColors[page].borderColor,
+                                    borderWidth: 3,
+                                    pointRadius: 5
+                                }]
                             },
-                            plugins: {
-                                legend: {
-                                    labels: {
-                                        color: '#e0e0e0'
-                                    }
+                            options: {
+                                animation: isInitialRender, // Enable animation for initial render, disable for subsequent updates
+                                scales: {
+                                    // ... (existing scale options) ...
+                                },
+                                plugins: {
+                                    // ... (existing plugin options) ...
                                 }
                             }
-                        }
+                        });
+                        charts.push(chart);
                     });
-                });
-            })
-            .catch(error => console.error('Error fetching data:', error));
+
+                    isInitialRender = false; // Set to false after the initial render
+
+                    // Restore the scroll position after charts have been updated
+                    window.scrollTo(0, currentScrollPosition);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        fetchAndRenderData(); // Initial render
+        setInterval(fetchAndRenderData, 1000);
     </script>
 </body>
 </html>
