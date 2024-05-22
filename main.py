@@ -14,9 +14,11 @@ app = Flask(__name__)
 conn = psycopg2.connect(os.getenv('POSTGRESQL_URI'))
 cur = conn.cursor()
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/data')
 def get_data():
@@ -59,7 +61,40 @@ def get_data():
         for page, hours_dict in chart_data.items()
     }
 
-    return jsonify(formatted_data)
+    # Fetch total views for specific pages in the last 24 hours
+    pages = ['home', 'slayer', 'misc', 'update']
+    total_views = {}
+    for page in pages:
+        cur.execute("""
+                SELECT COUNT(*)
+                FROM analytics
+                WHERE page = %s AND visit_time >= NOW() - INTERVAL '24 hours'
+            """, (page,))
+        total_views[page] = cur.fetchone()[0]
+
+    previous_data = fetch_previous_data()
+
+    return jsonify(chart_data=formatted_data, total_views=total_views, previous_data=previous_data)
+
+
+def fetch_previous_data():
+    # Fetch data for the previous 24 hours
+    cur.execute("""
+        SELECT
+            page,
+            COUNT(*) AS views
+        FROM
+            analytics
+        WHERE
+            visit_time >= NOW() - INTERVAL '48 hours'
+            AND visit_time < NOW() - INTERVAL '24 hours'
+        GROUP BY
+            page;
+    """)
+    previous_data = cur.fetchall()
+    previous_data = {page: views for page, views in previous_data}
+    return previous_data
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -13,6 +13,25 @@
             margin: 0 auto;
         }
 
+        #cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
         #charts-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(900px, 1fr));
@@ -39,15 +58,50 @@
             width: 100%;
             height: auto;
         }
+
+        h1 {
+            font-size: 50px;
+        }
+
+        h2 {
+            font-size: 35px;
+        }
+
+        .numb {
+            font-size: 30px;
+        }
     </style>
 </head>
 <body>
 
     <center><h1>Stranded HOF Analytics</h1></center>
 
+    <div id="cards-container">
+        <div class="card" id="home-views">
+            <h2>Home Views</h2>
+            <p class="numb">Loading...</p>
+            <span>In past 24 Hours</span>
+        </div>
+        <div class="card" id="slayer-views">
+            <h2>Slayer Views</h2>
+            <p class="numb">Loading...</p>
+            <span>In past 24 Hours</span>
+        </div>
+        <div class="card" id="misc-views">
+            <h2>Misc Views</h2>
+            <p class="numb">Loading...</p>
+            <span>In past 24 Hours</span>
+        </div>
+        <div class="card" id="update-views">
+            <h2>Update Views</h2>
+            <p class="numb">Loading...</p>
+            <span>In past 24 Hours</span>
+        </div>
+    </div>
+
     <div id="charts-container"></div>
 
- <script>
+    <script>
         let charts = [];
         let isInitialRender = true;
         let pageColors = {};
@@ -61,20 +115,39 @@
             return color;
         }
 
+
         function fetchAndRenderData() {
             const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
 
             fetch('/data')
                 .then(response => response.json())
                 .then(data => {
+                    const chartData = data.chart_data;
+                    const totalViews = data.total_views;
+                    const previousData = data.previous_data;
                     const container = document.getElementById('charts-container');
+
+                    // Update total views cards with percentage change
+                    const pages = ['home', 'slayer', 'misc', 'update'];
+                    pages.forEach(page => {
+                        const currentViews = totalViews[page];
+                        const previousViews = previousData[page] || 0;
+                        const changePercent = previousViews === 0 ? '∞%' : ((currentViews - previousViews) / previousViews * 100).toFixed(2) + '%';
+                        const card = document.getElementById(`${page}-views`);
+                        card.querySelector('p').innerText = `${currentViews}`;
+                        if (((currentViews - previousViews) / previousViews * 100).toFixed(2) >= 0)  {
+                            card.querySelector('span').innerText = `🟢${changePercent} in past 24 Hours.`;
+                        } else {
+                            card.querySelector('span').innerText = `🔴${changePercent} in past 24 Hours.`;
+                        }
+                    });
 
                     // Clear existing charts
                     charts.forEach(chart => chart.destroy());
                     charts = [];
                     container.innerHTML = '';
 
-                    Object.keys(data).forEach(page => {
+                    Object.keys(chartData).forEach(page => {
                         // Generate new colors for the page if it's the initial render
                         if (isInitialRender) {
                             pageColors[page] = {
@@ -99,7 +172,7 @@
                             data: {
                                 datasets: [{
                                     label: page,
-                                    data: data[page],
+                                    data: chartData[page],
                                     backgroundColor: pageColors[page].backgroundColor,
                                     borderColor: pageColors[page].borderColor,
                                     borderWidth: 3,
@@ -109,10 +182,35 @@
                             options: {
                                 animation: isInitialRender, // Enable animation for initial render, disable for subsequent updates
                                 scales: {
-                                    // ... (existing scale options) ...
+                                    x: {
+                                        type: 'time',
+                                        time: {
+                                            unit: 'hour',
+                                            tooltipFormat: 'yyyy-MM-dd HH:mm:ss',
+                                            displayFormats: {
+                                                hour: 'yyyy-MM-dd HH:mm:ss'
+                                            },
+                                            ticks: {
+                                                color: '#e0e0e0'
+                                            }
+                                        }
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            color: '#e0e0e0'
+                                        }
+                                    }
                                 },
                                 plugins: {
-                                    // ... (existing plugin options) ...
+                                    legend: {
+                                        labels: {
+                                            color: '#e0e0e0',
+                                            font: {
+                                                size: 24 // Increase the font size for the legend labels
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         });
@@ -127,8 +225,10 @@
                 .catch(error => console.error('Error fetching data:', error));
         }
 
+
+
         fetchAndRenderData(); // Initial render
-        setInterval(fetchAndRenderData, 1000);
+        setInterval(fetchAndRenderData, 10000);
     </script>
 </body>
 </html>
